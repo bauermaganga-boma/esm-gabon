@@ -2,6 +2,7 @@
    ESM — École Supérieure de la Mer · Feuille de style
    ========================================================= */
 :root{
+  color-scheme:only light;
   --navy:#0b2a5b; --navy-2:#0f3a7a; --blue:#1f6fd1; --sky:#2e9be6; --sky-2:#dcefff;
   --orange:#f07a1a; --orange-2:#ff9a3d; --gold:#e0a53a;
   --ink:#0f1c33; --muted:#5b6b85; --line:#e3e9f2; --bg:#f5f8fc; --card:#fff;
@@ -447,4 +448,114 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.88rem;min-width:640px}
 @media print{
   .sidebar,.app-top .who,.sb-toggle,.no-print,.notice{display:none!important}
   .app{display:block}.app-main{padding:0}.card{border:0;padding:0}
+}
+
+/* =========================================================
+   MOBILE — version compacte (moins de défilement, lecture confortable)
+   ========================================================= */
+.swipe-hint{display:none}
+@media (max-width:640px){
+  body{font-size:15px}
+  section{padding:3rem 0}
+  .sec-head{margin-bottom:1.4rem;gap:.8rem;align-items:flex-start}
+  .sec-head h2{font-size:1.5rem;margin-top:.4rem}
+  .sec-head p{font-size:.92rem}
+  .sec-head .btn{padding:.5rem .9rem;font-size:.8rem}
+  .eyebrow{font-size:.7rem}
+  .btn{padding:.75rem 1.15rem;font-size:.88rem}
+
+  /* Héro */
+  .hero{min-height:auto}
+  .hero .wrap{padding:3.2rem 0 6.5rem!important}
+  .hero h1{font-size:2.05rem;margin:.7rem 0 .8rem}
+  .hero p.lead{font-size:.95rem}
+  .hero .cta{margin-top:1.3rem;gap:.6rem}
+  .hero .cta .btn{flex:1 1 auto;justify-content:center}
+  .wave{height:60px}
+  .page-hero{padding:3.4rem 0 2.8rem}
+  .page-hero h1{font-size:1.8rem;margin:.5rem 0}
+  .page-hero p{font-size:.93rem}
+
+  /* Chiffres clés en 2 x 2 */
+  .stats{margin-top:-48px}
+  .stats .grid{grid-template-columns:1fr 1fr}
+  .stat{padding:1rem .9rem;gap:.6rem;flex-direction:column;align-items:flex-start;border-right:1px solid rgba(255,255,255,.1)!important;border-bottom:1px solid rgba(255,255,255,.1)}
+  .stat:nth-child(2n){border-right:0!important}
+  .stat:nth-child(n+3){border-bottom:0}
+  .stat .ic{width:36px;height:36px;border-radius:10px}
+  .stat .ic svg{width:18px;height:18px}
+  .stat b{font-size:1.45rem}
+  .stat span{font-size:.72rem;line-height:1.3;display:block}
+
+  /* Onglets sur une seule ligne défilante */
+  .tabs{flex-wrap:nowrap;overflow-x:auto;margin:0 -16px 1.2rem;padding:0 16px 4px;scrollbar-width:none}
+  .tabs::-webkit-scrollbar{display:none}
+  .tab{flex:none;padding:.5rem .9rem;font-size:.82rem}
+
+  /* Cartes plus petites */
+  .cards{gap:.8rem}
+  .fcard{padding:1.1rem;gap:.45rem;border-radius:14px}
+  .fcard .ic{width:42px;height:42px;border-radius:11px}
+  .fcard .ic svg{width:21px;height:21px}
+  .fcard h3{font-size:.98rem;padding-right:4.5rem}
+  .fcard p{font-size:.85rem;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+  .fcard .tag{top:1rem;right:1rem;font-size:.62rem}
+
+  /* Carrousels à faire glisser (accueil) */
+  .swipe{display:flex!important;overflow-x:auto;scroll-snap-type:x mandatory;gap:.8rem;margin:0 -16px;padding:0 16px 10px;scrollbar-width:none}
+  .swipe::-webkit-scrollbar{display:none}
+  .swipe > *{flex:0 0 80%;scroll-snap-align:start}
+  .swipe-hint{display:block;font-size:.75rem;color:var(--muted);text-align:right;margin-top:.3rem}
+
+  /* Actualités */
+  .ncard .bd{padding:1rem;gap:.4rem}
+  .ncard h3{font-size:.98rem}
+  .ncard p{font-size:.85rem;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+
+  /* Blocs texte + photos */
+  .split{gap:1.8rem}
+  .mosaic{grid-template-rows:130px 130px;gap:.6rem}
+  .mosaic .badge{padding:.6rem .8rem;bottom:14px;left:8px}
+  .mosaic .badge b{font-size:1.2rem}
+  .mosaic .badge span{font-size:.7rem}
+  .checks{gap:.6rem;margin:1rem 0 1.4rem;font-size:.92rem}
+  .lead-p{font-size:.95rem}
+
+  /* Piliers en 2 x 2 */
+  .pillars{grid-template-columns:1fr 1fr;gap:.7rem}
+  .pillar{padding:1.1rem .9rem;border-radius:14px}
+  .pillar .num{font-size:1.5rem}
+  .pillar h3{font-size:.92rem;margin:.3rem 0}
+  .pillar p{font-size:.78rem;line-height:1.45}
+  .testi{margin-top:2.4rem!important}
+  .testi blockquote{font-size:1.05rem;min-height:4.2em}
+
+  /* Partenaires, bandeau, formulaires */
+  .partner{min-width:210px;padding:.7rem 1rem}
+  .band{padding:1.6rem 1.3rem;border-radius:18px;gap:1.1rem}
+  .band h2{font-size:1.3rem}
+  .band p{font-size:.88rem}
+  .panel{padding:1.3rem;border-radius:14px}
+  .citem{padding:.9rem}
+  .map{height:260px;margin-top:2rem}
+  .timeline{gap:1.3rem}
+
+  /* Galerie en 2 colonnes */
+  .gallery{columns:2;column-gap:.6rem}
+  .gallery figure{margin-bottom:.6rem;border-radius:12px}
+  .gallery figcaption{font-size:.75rem;padding:1.6rem .6rem .5rem;opacity:1;transform:none}
+
+  /* Pied de page compact */
+  .footer{padding:3rem 0 0}
+  .footer .grid{grid-template-columns:1fr 1fr;gap:1.6rem 1rem}
+  .footer .grid > div:first-child,.footer .grid > div:last-child{grid-column:1 / -1}
+  .footer .logo-w img{height:48px}
+  .footer p,.footer ul{font-size:.84rem}
+  .footer ul{gap:.4rem}
+  .foot-bottom{margin-top:2rem;flex-direction:column;gap:.4rem;font-size:.74rem}
+
+  /* Boutons flottants plus discrets */
+  .wa{width:50px;height:50px;right:14px;bottom:14px}
+  .wa svg{width:26px;height:26px}
+  .totop{right:18px;bottom:74px;width:38px;height:38px}
 }
