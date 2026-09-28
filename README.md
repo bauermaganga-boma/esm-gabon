@@ -22,10 +22,11 @@ Site vitrine et espace numérique de l'École Supérieure de la Mer.
 - Scolarité : `scolarite` / `admin2026`
 - Étudiants : `ESM25-001` à `ESM25-028` / `esm2026`
 
-## Données
-En mode démonstration, les données sont stockées dans le navigateur (`localStorage`, voir `assets/js/store.js`).
-Toutes les méthodes du `Store` sont asynchrones : pour un usage réel (notes partagées entre tous les appareils,
-comptes sécurisés), il suffit de remplacer leur implémentation par des appels à une base en ligne (Supabase, Firebase ou une API).
+## Base de données (Supabase)
+- `supabase/install.sql` : tables, règles de sécurité (RLS) par rôle, fonctions, temps réel et comptes de démonstration.
+- `assets/js/config.js` : URL du projet et clé publique « anon ». Vide = mode démonstration (données dans le navigateur).
+- La scolarité crée les comptes, classes et matières depuis le back-office (« Comptes », « Classes & matières »).
+- Avant la mise en production : changer ou supprimer les comptes de démonstration et passer `showDemo` à `false`.
 
 ## Déploiement
 Site statique hébergé sur GitHub Pages — aucune compilation nécessaire.

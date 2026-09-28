@@ -41,12 +41,13 @@
 
 <div id="site-footer"></div>
 <script src="assets/js/data.js"></script>
+<script src="assets/js/config.js"></script>
 <script src="assets/js/store.js"></script>
 <script src="assets/js/main.js"></script>
 <script>
 (() => {
   const cfg = {
-    etudiant: {label:"Matricule", img:"navigation-cartes", t:"Votre campus, partout, tout le temps.", p:"Notes, bulletins, annonces des enseignants et messagerie : tout votre parcours réuni en un seul endroit.", demo:[["ESM25-001","esm2026","Arnaud Nzé · L3 GAMP"],["ESM25-015","esm2026","Yannick Nzamba · L2 MGP"]], go:"etudiant.html"},
+    etudiant: {label:"Matricule", img:"navigation-cartes", t:"Votre campus, partout, tout le temps.", p:"Notes, bulletins, annonces des enseignants et messagerie : tout votre parcours réuni en un seul endroit.", demo:[["ESM25-001","esm2026","Arnaud Nzé · L3 GAMP"],["ESM25-015","esm2026","Davy Mapangou · L2 MGP"]], go:"etudiant.html"},
     enseignant: {label:"Identifiant enseignant", img:"topo-niveau", t:"Le back-office des enseignants.", p:"Saisissez les notes, publiez annonces et devoirs, suivez la progression de vos classes et répondez à vos étudiants.", demo:[["p.ndong","prof2026","M. Paul Ndong · Topographie"],["c.mba","prof2026","Mme Clarisse Mba · Droit"],["s.obiang","prof2026","M. Serge Obiang · Logistique"]], go:"enseignant.html"},
     admin: {label:"Identifiant administration", img:"partenariat-oct", t:"Pilotage de la scolarité.", p:"Pré-inscriptions, messages du site, résultats par classe et annonces à toute l'école.", demo:[["scolarite","admin2026","Service Scolarité"]], go:"enseignant.html"},
   };
@@ -58,13 +59,17 @@
     document.getElementById("login-label").textContent = c.label;
     const img = document.getElementById("side-img"); img.src = `assets/img/${c.img}.jpg`;
     document.getElementById("side-title").textContent = c.t; document.getElementById("side-text").textContent = c.p;
-    document.getElementById("demo").innerHTML = `<b>Mode démonstration</b> — cliquez sur un compte pour le tester :<br>` + c.demo.map(([l, p, n]) => `<div style="margin-top:.4rem"><code data-l="${l}" data-p="${p}">${l}</code> / <code data-l="${l}" data-p="${p}">${p}</code> — ${n}</div>`).join("");
+    const dm = document.getElementById("demo"); dm.style.display = (window.ESM_CONFIG || {}).showDemo === false ? "none" : "";
+    dm.innerHTML = `<b>Comptes de démonstration</b> — cliquez sur un compte pour le tester :<br>` + c.demo.map(([l, p, n]) => `<div style="margin-top:.4rem"><code data-l="${l}" data-p="${p}">${l}</code> / <code data-l="${l}" data-p="${p}">${p}</code> — ${n}</div>`).join("");
   };
   document.querySelector(".role-sw").addEventListener("click", e => { const b = e.target.closest("button"); if (b) set(b.dataset.role); });
   document.getElementById("demo").addEventListener("click", e => { const c = e.target.closest("code"); if (!c) return; document.getElementById("login").value = c.dataset.l; document.getElementById("pwd").value = c.dataset.p; });
   document.getElementById("login-form").addEventListener("submit", async e => {
     e.preventDefault();
-    const u = await Store.login(e.target.login.value, e.target.pwd.value, role);
+    const btn = e.target.querySelector("button"); btn.disabled = true; btn.textContent = "Connexion…";
+    let u = null;
+    try { u = await Store.login(e.target.login.value, e.target.pwd.value, role); } catch (err) { toast("Connexion au serveur impossible.", "err"); }
+    btn.disabled = false; btn.textContent = "Se connecter";
     if (!u) return toast("Identifiants incorrects pour ce profil.", "err");
     toast(`Bienvenue ${u.prenom} !`, "ok");
     setTimeout(() => location.href = cfg[role].go, 500);

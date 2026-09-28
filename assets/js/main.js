@@ -206,7 +206,10 @@ function initAdmission() {
     e.preventDefault(); if (!valid()) return;
     const d = Object.fromEntries(new FormData(form));
     d.formationLabel = (FORMATIONS.find(f => f.id === d.formation) || {}).t || "";
-    const ref = await Store.addCandidature(d);
+    const btn = $("button[type=submit]", form); btn.disabled = true;
+    let ref;
+    try { ref = await Store.addCandidature(d); } catch (err) { btn.disabled = false; return toast("Envoi impossible : " + err.message, "err"); }
+    btn.disabled = false;
     form.reset(); show(0);
     modal("Pré-inscription enregistrée 🎉", `<p class="lead-p">Merci <b>${d.prenom}</b> ! Votre demande pour <b>${d.formationLabel}</b> a bien été transmise au service de la scolarité.</p>
       <div class="panel" style="margin:1.2rem 0;box-shadow:none;text-align:center"><small style="color:var(--muted)">Votre numéro de dossier</small><div style="font-family:var(--font-h);font-size:1.8rem;font-weight:900;color:var(--navy)">${ref}</div></div>
@@ -218,8 +221,10 @@ function initContact() {
   const form = $("#contact-form"); if (!form) return;
   form.addEventListener("submit", async e => {
     e.preventDefault();
-    await Store.addContact(Object.fromEntries(new FormData(form)));
-    form.reset(); toast("Message envoyé ! Nous vous répondrons rapidement.", "ok");
+    const btn = $("button[type=submit]", form); btn.disabled = true;
+    try { await Store.addContact(Object.fromEntries(new FormData(form))); form.reset(); toast("Message envoyé ! Nous vous répondrons rapidement.", "ok"); }
+    catch (err) { toast("Envoi impossible : " + err.message, "err"); }
+    btn.disabled = false;
   });
 }
 
