@@ -46,7 +46,15 @@ const P = (() => {
     };
     P.redrawNav = draw;
     document.getElementById("who").innerHTML = `<span class="av">${ini(me)}</span><span><b>${esc(full(me))}</b><small>${esc(me.titre || Store.classe(me.classe)?.nom || "")}</small></span>`;
-    document.getElementById("sbt").onclick = () => sb.classList.toggle("open");
+    document.getElementById("sbt").onclick = e => { e.stopPropagation(); sb.classList.toggle("open"); };
+    document.querySelector(".app-main").addEventListener("click", () => sb.classList.remove("open"));
+    // Bouton « Sortir » toujours visible en haut : déconnexion puis retour à l'accueil du site
+    const quit = document.getElementById("quit");
+    if (quit) quit.onclick = async () => {
+      if (window.__esmDirty && !confirm("Des notes ne sont pas enregistrées. Quitter quand même ?")) return;
+      window.__esmDirty = false; quit.disabled = true;
+      await Store.logout().catch(() => {}); location.href = "index.html";
+    };
     route = (top = true) => {
       const id = location.hash.slice(1).split("?")[0];
       cur = NAV.some(n => n.id === id) ? id : NAV[0].id;
