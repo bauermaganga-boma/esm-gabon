@@ -65,6 +65,7 @@ function renderChrome() {
     </div>
   </div>
   <div class="foot-bottom"><span>© ${new Date().getFullYear()} ${ESM.nom} · ${ESM.adresse}</span><span>${ESM.agrement}</span></div>
+  <div class="foot-credit">© ${new Date().getFullYear()} Tous droits réservés · Site conçu et développé par <b>Rouana</b></div>
   </div></footer>
   <a class="wa" href="https://wa.me/${ESM.whatsapp}?text=${encodeURIComponent("Bonjour ESM, je souhaite avoir des informations sur vos formations.")}" target="_blank" rel="noopener" aria-label="Écrire sur WhatsApp">${ICONS.wa}</a>
   <button class="totop" aria-label="Haut de page">↑</button>`;
