@@ -114,3 +114,17 @@ const GALERIE = [
   {img:"ceremonie-toge", cat:"ceremonies", t:"Remise des toges"},
   {img:"topo-terrain", cat:"terrain", t:"Topographie : prise de mesures"},
 ];
+
+/* Espace numérique : les 3 profils, leurs avantages et un compte de démonstration chacun
+   (les comptes ne s'affichent que si ESM_CONFIG.showDemo n'est pas à false) */
+const ESPACES = [
+  {role:"etudiant", ic:"cap", t:"Étudiants", s:"Suivre sa scolarité", c:"#1f6fd1",
+   pts:["Notes et moyennes en temps réel","Bulletin imprimable et rang","Annonces, devoirs et messagerie"],
+   demo:{login:"ESM25-015", pwd:"esm2026", nom:"Davy Mapangou · L2"}},
+  {role:"enseignant", ic:"edit", t:"Enseignants", s:"Gérer ses classes", c:"#f07a1a",
+   pts:["Saisie des notes, moyennes automatiques","Statistiques de classe et export","Annonces, devoirs et messagerie"],
+   demo:{login:"p.ndong", pwd:"prof2026", nom:"M. Paul Ndong"}},
+  {role:"admin", ic:"shield", t:"Scolarité", s:"Piloter l'établissement", c:"#0b2a5b",
+   pts:["Pré-inscriptions reçues en ligne","Résultats et classements par classe","Comptes, classes et matières"],
+   demo:{login:"scolarite", pwd:"admin2026", nom:"Service Scolarité"}},
+];

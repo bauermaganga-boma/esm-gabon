@@ -77,6 +77,13 @@
     setTimeout(() => location.href = cfg[role].go, 500);
   });
   set(role);
+  // Accès en un clic depuis l'accueil (?demo=1) : connexion automatique au compte de démonstration
+  const P = new URLSearchParams(location.search), E = (typeof ESPACES !== "undefined" ? ESPACES : []).find(x => x.role === role);
+  if (P.get("demo") === "1" && E && (window.ESM_CONFIG || {}).showDemo !== false) {
+    document.getElementById("login").value = E.demo.login; document.getElementById("pwd").value = E.demo.pwd;
+    toast(`Connexion à l'espace ${E.t.toLowerCase()} de démonstration…`);
+    setTimeout(() => document.getElementById("login-form").requestSubmit(), 700);
+  }
 })();
 </script>
 </body>
