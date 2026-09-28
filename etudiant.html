@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Espace étudiant – ESM</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="assets/img/logo-esm.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body data-page="portal">
+<div class="app">
+  <aside class="sidebar" id="sb"></aside>
+  <main class="app-main">
+    <div class="app-top">
+      <div style="display:flex;gap:.8rem;align-items:center"><button class="sb-toggle" id="sbt" aria-label="Menu"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button><div><h1 id="vt"></h1><p id="vs"></p></div></div>
+      <div class="who" id="who"></div>
+    </div>
+    <div id="views"></div>
+    <p class="notice">Mode démonstration : les données sont enregistrées dans ce navigateur. Pour un usage réel partagé entre tous les enseignants et étudiants, la même interface se branche sur une base de données en ligne.</p>
+  </main>
+</div>
+<script src="assets/js/data.js"></script>
+<script src="assets/js/store.js"></script>
+<script src="assets/js/main.js"></script>
+<script src="assets/js/portal.js"></script>
+<script>P.student();</script>
+</body>
+</html>

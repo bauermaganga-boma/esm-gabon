@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Admission – ESM · École Supérieure de la Mer</title>
+<meta name="description" content="Conditions d'admission, dossier et pré-inscription en ligne à l'École Supérieure de la Mer.">
+<link rel="icon" href="assets/img/logo-esm.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body data-page="admission">
+<div id="site-header"></div>
+
+<header class="page-hero">
+  <img class="bg" src="assets/img/ceremonie-toge.jpg" alt="">
+  <div class="wrap">
+    <p class="crumbs"><a href="index.html">Accueil</a> / Admission</p>
+    <h1>Admission & pré-inscription</h1>
+    <p>Rentrée académique 2026 – 2027 : déposez votre demande en ligne, notre service de scolarité vous recontacte.</p>
+  </div>
+</header>
+
+<section class="bg-white">
+  <div class="wrap">
+    <div class="cards">
+      <div class="fcard rv"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10L12 5 2 10l10 5 10-5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg></div><h3>Conditions d'accès</h3><p><b>Licence :</b> être titulaire du Baccalauréat (ou équivalent).<br><b>Master :</b> être titulaire d'une Licence (Bac+3).<br><b>Master Cadres :</b> expérience professionnelle requise.</p></div>
+      <div class="fcard rv d1"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8"/></svg></div><h3>Pièces du dossier</h3><p>Copie légalisée du diplôme, relevés de notes, acte de naissance, photos d'identité, fiche de pré-inscription.</p></div>
+      <div class="fcard rv d2"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.1V12a10 10 0 11-5.9-9.1"/><path d="M22 4L12 14l-3-3"/></svg></div><h3>Procédure</h3><p>1. Pré-inscription en ligne · 2. Dépôt du dossier à l'école · 3. Entretien · 4. Confirmation et inscription définitive.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="preinscription">
+  <div class="wrap split" style="align-items:start">
+    <div>
+      <span class="eyebrow rv">Formulaire en ligne</span>
+      <h2 class="rv d1" style="font-size:clamp(1.8rem,3.4vw,2.6rem);color:var(--navy);margin:.6rem 0 1rem">Pré-inscription en 3 étapes</h2>
+      <p class="lead-p rv d2">Remplissez le formulaire : votre demande arrive directement dans le tableau de bord de la scolarité. Vous recevez immédiatement un numéro de dossier.</p>
+      <img class="rv" src="assets/img/etudiants-trio.jpg" alt="Étudiants de l'ESM" style="border-radius:22px;margin-top:2rem;box-shadow:var(--shadow);width:100%" loading="lazy">
+      <div id="calendrier" class="panel rv" style="margin-top:1.5rem;box-shadow:none">
+        <h3 style="color:var(--navy);margin-bottom:1rem">Calendrier indicatif</h3>
+        <div class="timeline">
+          <div class="tl"><b>En cours</b><h4>Pré-inscriptions ouvertes</h4><p>Formulaire en ligne ou directement à l'école.</p></div>
+          <div class="tl"><b>Après dépôt</b><h4>Étude des dossiers & entretiens</h4><p>La scolarité vous contacte par téléphone.</p></div>
+          <div class="tl"><b>Rentrée</b><h4>Début des cours 2026 – 2027</h4><p>Date communiquée aux admis par la scolarité.</p></div>
+        </div>
+      </div>
+    </div>
+    <form class="panel form rv" id="admission-form" novalidate>
+      <div class="steps"><span></span><span></span><span></span></div>
+      <div class="fstep">
+        <h3 style="color:var(--navy)">1 · Vos informations</h3>
+        <div class="row"><div class="field"><label for="prenom">Prénom *</label><input id="prenom" name="prenom" required autocomplete="given-name"></div><div class="field"><label for="nom">Nom *</label><input id="nom" name="nom" required autocomplete="family-name"></div></div>
+        <div class="row"><div class="field"><label for="tel">Téléphone *</label><input id="tel" name="tel" type="tel" required placeholder="0XX XX XX XX" autocomplete="tel"></div><div class="field"><label for="email">E-mail</label><input id="email" name="email" type="email" autocomplete="email"></div></div>
+        <div class="row"><div class="field"><label for="naissance">Date de naissance</label><input id="naissance" name="naissance" type="date"></div><div class="field"><label for="ville">Ville</label><input id="ville" name="ville" placeholder="Libreville"></div></div>
+        <button type="button" class="btn btn-navy" data-next style="justify-self:end">Continuer →</button>
+      </div>
+      <div class="fstep">
+        <h3 style="color:var(--navy)">2 · Votre projet</h3>
+        <div class="field"><label for="formation">Formation souhaitée *</label><select id="formation" name="formation" required></select></div>
+        <div class="row"><div class="field"><label for="niveau">Dernier diplôme obtenu *</label><select id="niveau" name="niveau" required><option value="">— Choisir —</option><option>Baccalauréat</option><option>BTS / DUT</option><option>Licence</option><option>Master</option><option>Autre</option></select></div><div class="field"><label for="serie">Série / spécialité</label><input id="serie" name="serie" placeholder="ex. C, D, B, G…"></div></div>
+        <div style="display:flex;justify-content:space-between;gap:.6rem"><button type="button" class="btn btn-line" data-prev>← Retour</button><button type="button" class="btn btn-navy" data-next>Continuer →</button></div>
+      </div>
+      <div class="fstep">
+        <h3 style="color:var(--navy)">3 · Motivation</h3>
+        <div class="field"><label for="motivation">Pourquoi souhaitez-vous rejoindre l'ESM ?</label><textarea id="motivation" name="motivation" placeholder="Quelques lignes sur votre projet professionnel…"></textarea></div>
+        <div class="field"><label for="source">Comment avez-vous connu l'ESM ?</label><select id="source" name="source"><option>Facebook</option><option>Bouche-à-oreille</option><option>Salon / forum</option><option>Affiche</option><option>Autre</option></select></div>
+        <label style="display:flex;gap:.6rem;font-size:.86rem;color:var(--muted)"><input type="checkbox" required> J'accepte d'être recontacté(e) par l'ESM au sujet de ma demande.</label>
+        <div style="display:flex;justify-content:space-between;gap:.6rem"><button type="button" class="btn btn-line" data-prev>← Retour</button><button class="btn btn-orange" type="submit">Envoyer ma pré-inscription</button></div>
+      </div>
+    </form>
+  </div>
+</section>
+
+<section class="bg-white">
+  <div class="wrap" style="max-width:860px">
+    <div class="center"><div class="sec-head"><span class="eyebrow">FAQ</span><h2>Questions fréquentes</h2></div></div>
+    <div class="faq">
+      <details><summary>La pré-inscription en ligne suffit-elle ?</summary><p>Non, elle permet d'ouvrir votre dossier. L'inscription devient définitive après dépôt des pièces à l'école et validation par la scolarité.</p></details>
+      <details><summary>Puis-je intégrer directement un Master ?</summary><p>Oui, si vous êtes titulaire d'une Licence (Bac+3) dans un domaine compatible. Votre dossier sera étudié par l'équipe pédagogique.</p></details>
+      <details><summary>Les formations comportent-elles des stages ?</summary><p>Oui. Toutes nos formations intègrent des sorties de terrain, des visites d'entreprises et un stage professionnel encadré.</p></details>
+      <details><summary>Quels sont les frais de scolarité ?</summary><p>Les frais dépendent de la formation et du niveau. Contactez la scolarité par téléphone, WhatsApp ou e-mail pour recevoir la grille tarifaire à jour.</p></details>
+      <details><summary>Comment suivre mes notes une fois inscrit ?</summary><p>Chaque étudiant reçoit un identifiant pour l'Espace numérique : notes, moyennes, bulletin, annonces et messagerie avec les enseignants.</p></details>
+    </div>
+  </div>
+</section>
+
+<div id="site-footer"></div>
+<script src="assets/js/data.js"></script>
+<script src="assets/js/store.js"></script>
+<script src="assets/js/main.js"></script>
+</body>
+</html>

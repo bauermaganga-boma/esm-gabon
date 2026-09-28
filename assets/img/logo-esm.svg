@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 250" role="img" aria-label="Logo École Supérieure de la Mer">
+  <defs>
+    <path id="arc" d="M 26 150 Q 118 -22 336 44"/>
+    <linearGradient id="hull" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2f86dc"/><stop offset="1" stop-color="#1b5fb3"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="172" cy="140" rx="160" ry="98" fill="none" stroke="#1f6fd1" stroke-width="9" stroke-linecap="round" stroke-dasharray="478 344" stroke-dashoffset="69"/>
+  <text font-family="Montserrat, Arial, sans-serif" font-weight="800" font-size="19" fill="#e0861d" letter-spacing="0.2">
+    <textPath href="#arc">ECOLE SUPÉRIEURE DE LA MER</textPath>
+  </text>
+  <path d="M 96 128 L 312 92 L 258 192 L 104 192 Z" fill="url(#hull)"/>
+  <path d="M 104 192 L 258 192 L 252 201 L 104 201 Z" fill="#e0861d"/>
+  <rect x="108" y="72" width="15" height="118" fill="#e0861d"/>
+  <line x1="84" y1="116" x2="326" y2="66" stroke="#0b2a5b" stroke-width="3"/>
+  <text x="128" y="178" font-family="Montserrat, Arial, sans-serif" font-weight="900" font-size="62" fill="#fff" letter-spacing="-1">ESM</text>
+  <g fill="none" stroke="#1f6fd1" stroke-width="5" stroke-linecap="round">
+    <path d="M 92 203 Q 175 196 268 204"/>
+    <path d="M 104 214 Q 175 208 254 215"/>
+    <path d="M 118 225 Q 175 220 238 226"/>
+  </g>
+</svg>
