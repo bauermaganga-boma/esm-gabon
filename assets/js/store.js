@@ -178,7 +178,7 @@ const Store = (() => {
      ========================================================= */
   function ready() {
     if (!readyP) readyP = new Promise((res, rej) => {
-      const go = () => { sb = window.supabase.createClient(CFG.supabaseUrl, CFG.supabaseAnonKey); res(sb); };
+      const go = () => { sb = window.supabase.createClient(CFG.supabaseUrl, CFG.supabaseAnonKey, {db:{schema: CFG.schema || "public"}}); res(sb); };
       if (window.supabase) return go();
       const s = document.createElement("script");
       s.src = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js";
@@ -282,7 +282,7 @@ const Store = (() => {
     async deleteEvent(id) { await q(sb.from("evenements").delete().eq("id", id)); db.evenements = db.evenements.filter(e => e.id !== id); },
     subscribe(cb) {
       const ch = sb.channel("esm-live");
-      ["notes","posts","messages","candidatures","contacts","seances","evenements"].forEach(t => ch.on("postgres_changes", {event:"*", schema:"public", table:t}, async payload => {
+      ["notes","posts","messages","candidatures","contacts","seances","evenements"].forEach(t => ch.on("postgres_changes", {event:"*", schema: CFG.schema || "public", table:t}, async payload => {
         try { await this.loaders[t](); } catch (e) { return; }
         cb(t, payload.new && t === "messages" ? mapMsg(payload.new) : payload.new);
       }));
