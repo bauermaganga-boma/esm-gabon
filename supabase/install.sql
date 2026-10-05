@@ -84,6 +84,33 @@ create table if not exists public.contacts (
   date    timestamptz not null default now()
 );
 
+-- Planning : emploi du temps (cours hebdomadaires) et événements datés
+create table if not exists public.seances (
+  id      uuid primary key default gen_random_uuid(),
+  classe  text not null references public.classes on delete cascade,
+  matiere text not null references public.matieres on delete cascade,
+  jour    int  not null check (jour between 1 and 6),          -- 1 = lundi … 6 = samedi
+  debut   time not null,
+  fin     time not null,
+  salle   text check (length(salle) <= 60),
+  check (fin > debut)
+);
+
+create table if not exists public.evenements (
+  id      uuid primary key default gen_random_uuid(),
+  auteur  uuid not null default auth.uid() references public.profiles on delete cascade,
+  classe  text not null,                                       -- '*' = toute l'école
+  matiere text references public.matieres on delete set null,
+  type    text not null check (type in ('examen','reunion','evenement','conge')),
+  titre   text not null check (length(titre) between 1 and 120),
+  details text check (length(details) <= 2000),
+  date    date not null,
+  debut   time,
+  fin     time,
+  lieu    text check (length(lieu) <= 100),
+  check (fin is null or debut is null or fin > debut)
+);
+
 -- ---------------------------------------------------------------------
 -- 2. Fonctions utilitaires (utilisées par les règles de sécurité)
 -- ---------------------------------------------------------------------
@@ -114,6 +141,8 @@ alter table public.posts        enable row level security;
 alter table public.messages     enable row level security;
 alter table public.candidatures enable row level security;
 alter table public.contacts     enable row level security;
+alter table public.seances      enable row level security;
+alter table public.evenements   enable row level security;
 
 -- Classes & matières : lecture pour les connectés, écriture pour la scolarité
 create policy classes_read   on public.classes  for select to authenticated using (true);
@@ -156,6 +185,17 @@ create policy cand_admin on public.candidatures for all to authenticated using (
 create policy contacts_insert on public.contacts for insert to anon, authenticated with check (true);
 create policy contacts_admin  on public.contacts for select to authenticated using (my_role() = 'admin');
 create policy contacts_del    on public.contacts for delete to authenticated using (my_role() = 'admin');
+
+-- Planning : emploi du temps lisible par tous les connectés, géré par la scolarité
+create policy seances_read  on public.seances for select to authenticated using (true);
+create policy seances_admin on public.seances for all    to authenticated using (my_role() = 'admin') with check (my_role() = 'admin');
+-- Événements : visibles par les classes concernées ; créés par la scolarité ou par l'enseignant pour ses classes
+create policy evenements_read on public.evenements for select to authenticated
+  using (my_role() = 'admin' or auteur = auth.uid() or classe = '*' or classe = my_classe() or teaches_classe(classe));
+create policy evenements_insert on public.evenements for insert to authenticated
+  with check (auteur = auth.uid() and (my_role() = 'admin' or (my_role() = 'enseignant' and teaches_classe(classe))));
+create policy evenements_delete on public.evenements for delete to authenticated
+  using (auteur = auth.uid() or my_role() = 'admin');
 
 -- ---------------------------------------------------------------------
 -- 4. Fonctions appelées par le site
@@ -249,7 +289,7 @@ grant execute on function public.admin_delete_user(uuid) to authenticated;
 -- ---------------------------------------------------------------------
 -- 5. Temps réel (notes, annonces, messages, pré-inscriptions)
 -- ---------------------------------------------------------------------
-alter publication supabase_realtime add table public.notes, public.posts, public.messages, public.candidatures, public.contacts;
+alter publication supabase_realtime add table public.notes, public.posts, public.messages, public.candidatures, public.contacts, public.seances, public.evenements;
 
 -- ---------------------------------------------------------------------
 -- 6. Données de démarrage (comptes de démonstration)
@@ -302,4 +342,23 @@ begin
     ((select id from profiles where login='ESM25-001'), t2, 'Bonjour Madame, serait-il possible d''avoir le support du dernier cours sur les contrats d''affrètement ?', now() - interval '60 hours', true),
     (t2, (select id from profiles where login='ESM25-001'), 'Bonjour, oui : je le dépose à la scolarité demain. Bonne révision !', now() - interval '53 hours', false),
     ((select id from profiles where login='ESM25-009'), t3, 'Bonjour Monsieur, à quelle heure est prévu le départ pour la visite ?', now() - interval '74 hours', false);
+  -- Emploi du temps type (aucun conflit d'enseignant ni de salle)
+  insert into seances(classe, matiere, jour, debut, fin, salle) values
+    ('L3-GAMP','m1',1,'08:00','10:00','Salle 1'),('L3-GAMP','m2',1,'10:15','12:15','Salle 1'),('L3-GAMP','m3',2,'08:00','11:00','Salle 1'),
+    ('L3-GAMP','m1',3,'14:00','16:00','Salle 3'),('L3-GAMP','m2',4,'08:00','10:00','Salle 1'),('L3-GAMP','m3',5,'10:15','12:15','Salle 1'),
+    ('L3-TL','m4',1,'08:00','10:00','Salle 2'),('L3-TL','m5',1,'10:15','12:15','Salle 2'),('L3-TL','m6',2,'14:00','17:00','Salle 2'),
+    ('L3-TL','m4',3,'10:15','12:15','Salle 2'),('L3-TL','m5',4,'08:00','11:00','Salle 2'),('L3-TL','m6',5,'08:00','10:00','Salle 2'),
+    ('L2-MGP','m7',1,'10:15','12:15','Labo'),('L2-MGP','m8',2,'08:00','12:00','Terrain'),('L2-MGP','m7',3,'08:00','10:00','Labo'),
+    ('L2-MGP','m8',4,'14:00','17:00','Terrain'),('L2-MGP','m7',5,'10:15','12:15','Labo'),
+    ('M1-QHSE','m10',1,'14:00','17:00','Salle 4'),('M1-QHSE','m9',2,'08:00','10:00','Salle 4'),('M1-QHSE','m10',3,'08:00','11:00','Salle 4'),
+    ('M1-QHSE','m9',4,'10:15','12:15','Salle 4'),('M1-QHSE','m9',5,'14:00','16:00','Salle 4');
+  -- Événements à venir (dates décalées au prochain jour ouvré)
+  insert into evenements(auteur, classe, matiere, type, titre, details, date, debut, fin, lieu)
+  select e_aut, e_cls, e_mat, e_typ, e_tit, e_det, e_dat + case extract(isodow from e_dat) when 6 then 2 when 7 then 1 else 0 end, e_deb, e_fin, e_lieu from (values
+    (adm,'*',null,'reunion','Conseil pédagogique','Bilan de mi-semestre avec l''ensemble des enseignants.', current_date + 3, '15:00'::time, '17:00'::time, 'Salle des professeurs'),
+    (t1,'L2-MGP','m8','evenement','Sortie de terrain – géologie','Prévoir bottes, casquette et carnet de terrain.', current_date + 4, null, null, 'Site de terrain'),
+    (t2,'L3-GAMP','m2','examen','Examen de Droit maritime','Documents non autorisés.', current_date + 7, '08:00'::time, '10:00'::time, 'Salle 1'),
+    (t3,'L3-TL','m5','examen','Partiel – Supply chain management',null, current_date + 10, '08:00'::time, '11:00'::time, 'Salle 2'),
+    (adm,'*',null,'evenement','Journée citoyenne de salubrité','Participation de toutes les promotions.', current_date + 12, null, null, 'Libreville')
+  ) v(e_aut, e_cls, e_mat, e_typ, e_tit, e_det, e_dat, e_deb, e_fin, e_lieu);
 end $$;

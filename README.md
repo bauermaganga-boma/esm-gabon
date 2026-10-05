@@ -13,9 +13,9 @@ Site vitrine et espace numérique de l'École Supérieure de la Mer.
 ## Espace numérique (`espace.html`)
 | Profil | Accès | Fonctions |
 |---|---|---|
-| Enseignant | `enseignant.html` | saisie des notes (CC 40 % / examen 60 %, moyenne et mention auto), statistiques de classe, export CSV, annonces et devoirs, messagerie |
-| Scolarité | `enseignant.html` | pré-inscriptions reçues (statuts), résultats et classements par classe, messages du site, annonces à toute l'école |
-| Étudiant | `etudiant.html` | notes, moyenne générale, rang, bulletin imprimable, annonces, devoirs, emploi du temps, messagerie |
+| Enseignant | `enseignant.html` | planning de la semaine (toutes classes), programmation d'examens et d'événements, saisie des notes (CC 40 % / examen 60 %, moyenne et mention auto), statistiques de classe, export CSV, annonces et devoirs, messagerie |
+| Scolarité | `enseignant.html` | planning : emploi du temps des classes (détection des conflits classe/enseignant/salle), examens, réunions, congés ; pré-inscriptions reçues (statuts), résultats et classements par classe, messages du site, annonces à toute l'école |
+| Étudiant | `etudiant.html` | notes, moyenne générale, rang, bulletin imprimable, annonces, devoirs, emploi du temps réel et prochains examens, messagerie |
 
 ### Comptes de démonstration
 - Enseignants : `p.ndong`, `c.mba`, `s.obiang` / `prof2026`

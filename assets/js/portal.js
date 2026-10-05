@@ -103,6 +103,88 @@ const P = (() => {
     };
     draw();
   }
+  /* ---------- Planning : outils partagés ---------- */
+  const PL = Planning;
+  const plWeek = () => { const s = ss("esm_plw"); return s ? PL.parse(s) : PL.monday(new Date()); };
+  const bindWeekNav = (el, w) => el.querySelectorAll("[data-w]").forEach(b => b.onclick = () => {
+    const n = +b.dataset.w; ss("esm_plw", PL.ymd(n === 0 ? PL.monday(new Date()) : PL.addDays(w, n))); route(false);
+  });
+  const plus2h = h => { const m = Math.min(PL.min(h) + 120, 19 * 60); return `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`; };
+  const nextWorkday = () => { const d = new Date(); d.setDate(d.getDate() + 1); while (d.getDay() === 0 || d.getDay() === 6) d.setDate(d.getDate() + 1); return PL.ymd(d); };
+  const hoursOf = list => list.reduce((a, s) => a + (PL.min(s.fin) - PL.min(s.debut)), 0) / 60;
+  const fmtH = h => (Math.round(h * 4) / 4).toString().replace(".", ",") + " h";
+
+  function seanceInfo(s) {
+    const m = Store.matiere(s.matiere) || {}, p = Store.user(m.prof);
+    modal(m.nom || "Cours", `<div class="post" style="border-left-color:${PL.colorOf(s.matiere)}"><p><b>${PL.JOURS[s.jour - 1]}</b> de <b>${PL.hm(s.debut)}</b> à <b>${PL.hm(s.fin)}</b></p>
+      <small>Classe : ${esc(Store.classe(s.classe)?.nom || s.classe)}<br>Enseignant : ${esc(full(p))}${s.salle ? "<br>Salle : " + esc(s.salle) : ""}</small></div>`);
+  }
+  function eventInfo(e) {
+    const T = PL.TYPES[e.type], m = e.matiere ? Store.matiere(e.matiere) : null, can = me.role === "admin" || e.auteur === me.id;
+    const box = modal(e.titre, `<p class="chip" style="background:${T.c}1a;color:${T.c};margin-bottom:.8rem">${T.l}</p>
+      <p><b>${PL.fmtLong(e.date)}</b>${e.debut ? ` · ${PL.hm(e.debut)}${e.fin ? " – " + PL.hm(e.fin) : ""}` : " · toute la journée"}</p>
+      <p style="color:var(--muted);margin:.4rem 0">${e.classe === "*" ? "Toute l'école" : esc(Store.classe(e.classe)?.nom || e.classe)}${m ? " · " + esc(m.nom) : ""}${e.lieu ? " · " + esc(e.lieu) : ""}</p>
+      ${e.details ? `<p>${esc(e.details)}</p>` : ""}<p style="font-size:.8rem;color:var(--muted);margin-top:.6rem">Ajouté par ${esc(full(Store.user(e.auteur)))}</p>
+      ${can ? `<button class="btn btn-line btn-sm" id="evdel" style="margin-top:1rem;color:var(--bad)">Supprimer l'événement</button>` : ""}`);
+    const d = box.querySelector("#evdel");
+    if (d) d.onclick = async () => { if (!confirm("Supprimer cet événement ?")) return; if (await act(() => Store.deleteEvent(e.id), "Événement supprimé.")) { box.classList.remove("on"); route(false); } };
+  }
+  function seanceForm(s, classes) {
+    const T = Store.db().users.filter(u => u.role === "enseignant");
+    const box = modal(s.id ? "Modifier le cours" : "Ajouter un cours", `<form class="form" id="sf">
+      <div class="row"><div class="field"><label>Classe</label><select name="classe">${classes.map(c => `<option value="${c.id}" ${c.id === s.classe ? "selected" : ""}>${esc(c.id)}</option>`).join("")}</select></div>
+        <div class="field"><label>Matière</label><select name="matiere" required></select></div></div>
+      <div class="row"><div class="field"><label>Jour</label><select name="jour">${PL.JOURS.map((j, i) => `<option value="${i + 1}" ${i + 1 === +s.jour ? "selected" : ""}>${j}</option>`).join("")}</select></div>
+        <div class="field"><label>Salle</label><input name="salle" maxlength="60" value="${esc(s.salle || "")}" placeholder="ex. Salle 2, Labo"></div></div>
+      <div class="row"><div class="field"><label>Début</label><input type="time" name="debut" min="07:00" max="19:00" step="900" required value="${s.debut || "08:00"}"></div>
+        <div class="field"><label>Fin</label><input type="time" name="fin" min="07:00" max="19:00" step="900" required value="${s.fin || plus2h(s.debut || "08:00")}"></div></div>
+      <p id="sfmsg" style="font-size:.85rem;color:var(--muted)"></p>
+      <div style="display:flex;gap:.6rem;flex-wrap:wrap"><button class="btn btn-orange">Enregistrer</button>${s.id ? `<button type="button" class="btn btn-line" id="sfdel" style="color:var(--bad)">Supprimer ce cours</button>` : ""}</div></form>`);
+    const f = box.querySelector("#sf");
+    const fillM = () => {
+      const ms = Store.db().matieres.filter(m => m.classe === f.classe.value);
+      f.matiere.innerHTML = ms.length ? ms.map(m => `<option value="${m.id}" ${m.id === s.matiere ? "selected" : ""}>${esc(m.nom)}</option>`).join("") : `<option value="">Aucune matière dans cette classe</option>`;
+      const m = Store.matiere(f.matiere.value); box.querySelector("#sfmsg").textContent = m ? "Enseignant : " + full(T.find(t => t.id === m.prof)) : "";
+    };
+    f.classe.onchange = fillM; f.matiere.onchange = fillM; fillM();
+    f.onsubmit = async e => {
+      e.preventDefault(); const d = {...Object.fromEntries(new FormData(f)), id:s.id}; d.jour = +d.jour;
+      if (!d.matiere) return toast("Créez d'abord une matière pour cette classe.", "err");
+      if (PL.min(d.fin) <= PL.min(d.debut)) return toast("L'heure de fin doit être après l'heure de début.", "err");
+      const c = Store.conflits(d); if (c.length) return toast("Impossible : " + c[0] + ".", "err");
+      if (await act(() => Store.saveSeance(d), s.id ? "Cours modifié." : "Cours ajouté à l'emploi du temps.")) { box.classList.remove("on"); ss("esm_plc", d.classe); route(false); }
+    };
+    const del = box.querySelector("#sfdel");
+    if (del) del.onclick = async () => { if (!confirm("Retirer ce cours de l'emploi du temps ?")) return; if (await act(() => Store.deleteSeance(s.id), "Cours supprimé.")) { box.classList.remove("on"); route(false); } };
+  }
+  function eventForm(classes, preset = {}) {
+    const admin = me.role === "admin";
+    const types = admin ? Object.entries(PL.TYPES) : Object.entries(PL.TYPES).filter(([k]) => k === "examen" || k === "evenement");
+    const box = modal(admin ? "Nouvel événement" : "Programmer une évaluation ou un événement", `<form class="form" id="ef">
+      <div class="row"><div class="field"><label>Type</label><select name="type">${types.map(([k, t]) => `<option value="${k}">${t.l}</option>`).join("")}</select></div>
+        <div class="field"><label>Concerne</label><select name="classe">${admin ? `<option value="*">Toute l'école</option>` : ""}${classes.map(c => `<option value="${c.id}" ${c.id === preset.classe ? "selected" : ""}>${esc(c.id)}</option>`).join("")}</select></div></div>
+      <div class="field"><label>Titre</label><input name="titre" required maxlength="120" placeholder="ex. Examen de topographie"></div>
+      <div class="field"><label>Matière (optionnel)</label><select name="matiere"></select></div>
+      <div class="row"><div class="field"><label>Date</label><input type="date" name="date" required value="${nextWorkday()}"></div><div class="field"><label>Lieu</label><input name="lieu" maxlength="100" placeholder="ex. Salle 1"></div></div>
+      <div class="row"><div class="field"><label>Début (optionnel)</label><input type="time" name="debut" step="900"></div><div class="field"><label>Fin (optionnel)</label><input type="time" name="fin" step="900"></div></div>
+      <div class="field"><label>Détails</label><textarea name="details" maxlength="2000" style="min-height:80px" placeholder="Consignes, matériel à prévoir…"></textarea></div>
+      <label style="display:flex;gap:.6rem;font-size:.88rem"><input type="checkbox" name="annonce" checked> Prévenir aussi les étudiants par une annonce</label>
+      <button class="btn btn-orange">Ajouter au planning</button></form>`);
+    const f = box.querySelector("#ef");
+    const fillM = () => { const ms = (admin ? Store.db().matieres : Store.db().matieres.filter(m => m.prof === me.id)).filter(m => m.classe === f.classe.value); f.matiere.innerHTML = `<option value="">—</option>` + ms.map(m => `<option value="${m.id}">${esc(m.nom)}</option>`).join(""); };
+    f.classe.onchange = fillM; fillM();
+    f.onsubmit = async e => {
+      e.preventDefault(); const d = Object.fromEntries(new FormData(f)), annonce = !!d.annonce; delete d.annonce;
+      if (d.debut && d.fin && PL.min(d.fin) <= PL.min(d.debut)) return toast("L'heure de fin doit être après l'heure de début.", "err");
+      if (!d.debut) { delete d.debut; delete d.fin; } if (!d.matiere) delete d.matiere;
+      f.querySelector("button.btn-orange").disabled = true;
+      const ok = await act(() => Store.addEvent(d), "Ajouté au planning.");
+      if (ok && annonce) await act(() => Store.addPost({classe:d.classe, matiere:d.matiere, type:d.type === "examen" ? "urgent" : "annonce", titre:`${PL.TYPES[d.type].l} : ${d.titre}`,
+        texte:`${PL.fmtLong(d.date)}${d.debut ? " à " + PL.hm(d.debut) : ""}${d.lieu ? " — " + d.lieu : ""}.${d.details ? " " + d.details : ""}`}));
+      if (ok) { box.classList.remove("on"); route(false); } else f.querySelector("button.btn-orange").disabled = false;
+    };
+  }
+
   function account(el) {
     el.innerHTML = `<div class="cols"><div class="card"><h2>Mon profil</h2>
         <div class="stu" style="margin-bottom:1rem"><span class="av" style="width:56px;height:56px;font-size:1.1rem">${ini(me)}</span><span><b style="font-size:1.1rem">${esc(full(me))}</b><small>${esc(me.titre || Store.classe(me.classe)?.nom || "")}</small></span></div>
@@ -142,6 +224,7 @@ const P = (() => {
       {id:"comptes", l:"Comptes", ic:"users", s:"Créer et gérer les comptes étudiants, enseignants et scolarité"},
       {id:"programme", l:"Classes & matières", ic:"book", s:"Organisation pédagogique : classes, matières, coefficients et enseignants"},
       {id:"contacts", l:"Messages du site", ic:"mail", s:"Formulaire de contact", badge:() => db().contacts.length});
+    nav.splice(admin ? 5 : 2, 0, {id:"planning", l:admin ? "Planning" : "Mon planning", ic:"cal", s:admin ? "Emploi du temps des classes, examens, réunions et événements" : "Vos cours de la semaine, examens et événements de vos classes"});
     nav.push({id:"compte", l:"Mon compte", ic:"lock", s:"Profil et mot de passe"});
 
     const views = {
@@ -350,6 +433,34 @@ const P = (() => {
         el.querySelectorAll("[data-dk]").forEach(b => b.onclick = async () => { await act(() => Store.deleteContact(b.dataset.dk)); route(false); });
       },
 
+      planning(el) {
+        const w = plWeek(), cls = myClasses();
+        let cid = ss("esm_plc"); if (!cls.some(c => c.id === cid)) cid = cls[0] && cls[0].id;
+        const seances = admin ? Store.seancesClasse(cid) : Store.seancesProf(me.id);
+        const evs = Store.eventsPour(me).filter(e => !admin || e.classe === "*" || e.classe === cid);
+        const label = s => { const m = Store.matiere(s.matiere) || {}; return admin ? {t:m.nom || "?", sub:[full(Store.user(m.prof)), s.salle].filter(x => x && x !== "—").join(" · ")} : {t:m.nom || "?", sub:[s.classe, s.salle].filter(Boolean).join(" · ")}; };
+        // Volume horaire hebdomadaire
+        const groups = admin ? db().matieres.filter(m => m.classe === cid).map(m => [m.nom, Store.seancesClasse(cid).filter(s => s.matiere === m.id), PL.colorOf(m.id)])
+                             : cls.map(c => [c.nom, seances.filter(s => s.classe === c.id), "var(--blue)"]);
+        el.innerHTML = `<div class="card"><div class="toolbar pl-toolbar">
+            ${admin ? `<div class="field"><label>Classe</label><select id="plc">${cls.map(c => `<option value="${c.id}" ${c.id === cid ? "selected" : ""}>${esc(c.nom)}</option>`).join("")}</select></div>` : ""}
+            ${PL.weekNav(w)}
+            <div style="display:flex;gap:.5rem;flex-wrap:wrap">${admin && cid ? `<button class="btn btn-navy btn-sm" id="addc">+ Cours</button>` : ""}${cls.length ? `<button class="btn btn-orange btn-sm" id="adde">+ ${admin ? "Événement" : "Évaluation / événement"}</button>` : ""}</div></div>
+            <div id="plw"></div>
+            <p style="font-size:.8rem;color:var(--muted);margin-top:.8rem">${admin ? "Cliquez sur une case vide pour ajouter un cours, sur un cours pour le modifier. Les conflits (classe, enseignant, salle) sont détectés automatiquement." : "Cliquez sur un cours ou un événement pour voir le détail. L'emploi du temps est géré par la scolarité."}</p></div>
+          <div class="cols"><div class="card"><h2>Prochains événements</h2>${PL.agenda(evs, e => admin || e.auteur === me.id)}</div>
+            <div class="card"><h2>Volume horaire / semaine <span class="chip info">${fmtH(hoursOf(seances))}</span></h2>${groups.length ? `<div class="feed">${groups.map(([n, l, c]) => `<div style="display:flex;justify-content:space-between;gap:1rem;align-items:center;font-size:.9rem"><span style="display:flex;gap:.5rem;align-items:center"><i style="width:10px;height:10px;border-radius:3px;background:${c};flex:none"></i>${esc(n)}</span><b style="white-space:nowrap">${fmtH(hoursOf(l))}</b></div>`).join("")}</div>` : empty("Aucun cours programmé.", "cal")}</div></div>`;
+        if (!cls.length && !admin) { el.querySelector("#plw").innerHTML = empty("Aucune matière ne vous est attribuée pour le moment.", "cal"); return; }
+        PL.week(el.querySelector("#plw"), {seances, events:evs, week:w, label,
+          onSlot:admin && cid ? (j, h) => seanceForm({classe:cid, jour:j, debut:h}, cls) : null,
+          onSeance:admin ? s => seanceForm(s, cls) : seanceInfo, onEvent:eventInfo});
+        bindWeekNav(el, w);
+        const pc = el.querySelector("#plc"); if (pc) pc.onchange = () => { ss("esm_plc", pc.value); route(false); };
+        const ac = el.querySelector("#addc"); if (ac) ac.onclick = () => seanceForm({classe:cid, jour:1, debut:"08:00"}, cls);
+        const ae = el.querySelector("#adde"); if (ae) ae.onclick = () => eventForm(cls, {classe:cid});
+        el.querySelectorAll("[data-dev]").forEach(b => b.onclick = async () => { if (confirm("Supprimer cet événement ?")) { await act(() => Store.deleteEvent(b.dataset.dev), "Événement supprimé."); route(false); } });
+      },
+
       compte: account,
     };
     shell(nav, views, admin ? "Scolarité" : "Enseignant");
@@ -368,7 +479,7 @@ const P = (() => {
       {id:"notes", l:"Mes notes", ic:"chart", s:"Mises à jour en temps réel par vos enseignants"},
       {id:"bulletin", l:"Bulletin", ic:"print", s:"Relevé de notes imprimable"},
       {id:"annonces", l:"Annonces & devoirs", ic:"mega", s:"Informations de vos enseignants et de la scolarité"},
-      {id:"edt", l:"Emploi du temps", ic:"cal", s:"Semaine type"},
+      {id:"edt", l:"Emploi du temps", ic:"cal", s:"Cours de la semaine, examens et événements"},
       {id:"messages", l:"Messagerie", ic:"chat", s:"Écrivez à vos enseignants", badge:() => Store.unread(me.id)},
       {id:"compte", l:"Mon compte", ic:"lock", s:"Profil et mot de passe"},
     ];
@@ -383,7 +494,13 @@ const P = (() => {
         el.innerHTML = `<div class="card" style="background:linear-gradient(110deg,var(--navy),var(--blue));color:#fff;border:0"><h2 style="color:#fff">Bonjour ${esc(me.prenom)} 👋</h2><p style="color:#cfe0ff">Matricule ${esc(me.matricule || me.login)} · ${esc(cl().nom)}</p></div>` +
           kpis([["chart","ic-b",fmt(mg),"moyenne générale"],["award","ic-o",rg ? `${rg.rang}<small style="font-size:.9rem">/${rg.total}</small>` : "—","rang dans la classe"],["book","ic-g",`${rows.filter(r => r.moy != null && r.moy >= 10).length}/${rows.length}`,"matières validées"],["chat","ic-y",Store.unread(me.id),"messages non lus"]]) +
           `<div class="cols"><div class="card"><h2>Dernières annonces <a class="btn btn-line btn-sm" href="#annonces">Tout voir</a></h2><div class="feed">${posts.slice(0, 3).map(p => postHTML(p)).join("") || empty("Aucune annonce")}</div></div>
-          <div><div class="card" style="text-align:center"><h2>Ma moyenne</h2><div class="ring" style="--p:${(mg || 0) * 5}"><div><span><b>${fmt(mg)}</b><br><small>/ 20</small></span></div></div><p style="margin-top:1rem">${chip(mg)}</p></div>
+          <div>${(() => {
+            const j = (new Date().getDay() + 6) % 7 + 1, td = PL.ymd(new Date());
+            const today = Store.seancesClasse(me.classe).filter(s => s.jour === j).sort((a, b) => a.debut.localeCompare(b.debut));
+            const exam = Store.eventsPour(me).filter(e => e.type === "examen" && e.date >= td).sort((a, b) => a.date.localeCompare(b.date))[0];
+            return `<div class="card"><h2>Aujourd'hui <a class="btn btn-line btn-sm" href="#edt">Planning</a></h2>${today.length ? `<div class="feed">${today.map(s => `<div style="display:flex;gap:.7rem;align-items:center;font-size:.88rem"><b style="min-width:3.2rem;color:var(--navy)">${PL.hm(s.debut)}</b><i style="width:4px;align-self:stretch;border-radius:4px;background:${PL.colorOf(s.matiere)}"></i><span>${esc(Store.matiere(s.matiere)?.nom || "")}<br><small style="color:var(--muted)">${PL.hm(s.debut)} – ${PL.hm(s.fin)}${s.salle ? " · " + esc(s.salle) : ""}</small></span></div>`).join("")}</div>` : `<p style="color:var(--muted);font-size:.9rem">Pas de cours aujourd'hui.</p>`}
+              ${exam ? `<div class="post urgent" style="margin-top:.9rem"><small style="color:var(--bad);font-weight:700">Prochain examen</small><h4>${esc(exam.titre)}</h4><small>${PL.fmtLong(exam.date)}${exam.debut ? " · " + PL.hm(exam.debut) : ""}${exam.lieu ? " · " + esc(exam.lieu) : ""}</small></div>` : ""}</div>`;
+          })()}<div class="card" style="text-align:center"><h2>Ma moyenne</h2><div class="ring" style="--p:${(mg || 0) * 5}"><div><span><b>${fmt(mg)}</b><br><small>/ 20</small></span></div></div><p style="margin-top:1rem">${chip(mg)}</p></div>
           <div class="card"><h2>Devoirs à rendre</h2>${dev.length ? `<div class="feed">${dev.map(p => `<div class="post devoir"><h4>${esc(p.titre)}</h4><small>${esc(Store.matiere(p.matiere)?.nom || "")} · <b style="color:var(--orange)">avant le ${date(p.echeance)}</b></small></div>`).join("")}</div>` : empty("Rien à rendre pour le moment 🎉", "award")}</div></div></div>`;
       },
       notes(el) {
@@ -409,10 +526,13 @@ const P = (() => {
         el.innerHTML = `<div class="card"><h2>Toutes les publications</h2><div class="feed">${posts.map(p => postHTML(p)).join("") || empty("Aucune annonce")}</div></div>`;
       },
       edt(el) {
-        const ms = db().matieres.filter(m => m.classe === me.classe), days = ["Lundi","Mardi","Mercredi","Jeudi","Vendredi"], slots = ["08h – 10h","10h – 12h","14h – 16h"];
-        if (!ms.length) { el.innerHTML = `<div class="card">${empty("L'emploi du temps sera disponible dès que les matières de votre classe seront programmées.", "cal")}</div>`; return; }
-        let k = 0; const cell = (d, s) => { if ((d + s) % 3 === 2) return `<div></div>`; const m = ms[(k++) % ms.length]; return `<div class="c ${k % 2 ? "" : "o"}">${esc(m.nom)}<small>${esc(full(Store.user(m.prof)))} · Salle ${1 + (d + s) % 5}</small></div>`; };
-        el.innerHTML = `<div class="card"><h2>Semaine type — ${esc(cl().nom)}</h2><div class="tbl-wrap" style="border:0"><div class="tt"><div class="h"></div>${days.map(d => `<div class="h">${d}</div>`).join("")}${slots.map((s, si) => `<div class="t">${s}</div>${days.map((_, di) => cell(di, si)).join("")}`).join("")}</div></div><p class="notice">Emploi du temps indicatif. Les changements de salle ou d'horaire sont publiés dans « Annonces ».</p></div>`;
+        const w = plWeek(), seances = Store.seancesClasse(me.classe), evs = Store.eventsPour(me);
+        el.innerHTML = `<div class="card"><div class="toolbar pl-toolbar">${PL.weekNav(w)}<span class="chip info">${fmtH(hoursOf(seances))} de cours / semaine</span></div><div id="plw"></div></div>
+          <div class="card"><h2>Examens et événements à venir</h2>${PL.agenda(evs)}</div>`;
+        if (!seances.length && !evs.length) { el.querySelector("#plw").innerHTML = empty("L'emploi du temps de votre classe n'est pas encore publié par la scolarité.", "cal"); return; }
+        PL.week(el.querySelector("#plw"), {seances, events:evs, week:w, onSeance:seanceInfo, onEvent:eventInfo,
+          label:s => { const m = Store.matiere(s.matiere) || {}; return {t:m.nom || "?", sub:[full(Store.user(m.prof)), s.salle].filter(x => x && x !== "—").join(" · ")}; }});
+        bindWeekNav(el, w);
       },
       messages(el) { messenger(el, profs().concat(db().users.filter(u => u.role === "admin"))); },
       compte: account,

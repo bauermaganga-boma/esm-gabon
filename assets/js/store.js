@@ -11,7 +11,7 @@ const Store = (() => {
   const PONDERATION = {cc: 0.4, exam: 0.6};
   const EMAIL = login => String(login).trim().toLowerCase() + "@esm.local";
 
-  let db = {classes:[], users:[], matieres:[], notes:{}, posts:[], messages:[], candidatures:[], contacts:[], rangs:{}};
+  let db = {classes:[], users:[], matieres:[], notes:{}, posts:[], messages:[], candidatures:[], contacts:[], rangs:{}, seances:[], evenements:[]};
   let me = null, sb = null, readyP = null;
 
   /* ---------- Règles de calcul ---------- */
@@ -84,12 +84,49 @@ const Store = (() => {
       {id:"c1", ref:"ESM-26-0412", prenom:"Rachel", nom:"Mengue", tel:"077 00 00 00", email:"rachel.m@exemple.ga", formation:"tl", formationLabel:"Transport et Logistique", niveau:"Baccalauréat", serie:"B", date:iso(1), statut:"nouveau"},
       {id:"c2", ref:"ESM-26-0409", prenom:"Dimitri", nom:"Oyono", tel:"066 00 00 00", email:"d.oyono@exemple.ga", formation:"m-qhse", formationLabel:"Qualité Hygiène Sécurité Environnement", niveau:"Licence", serie:"", date:iso(3), statut:"en cours"},
     ];
-    return {v:1, classes, users, matieres, notes, posts, messages, candidatures, contacts:[], rangs:{}};
+    const d = {v:1, classes, users, matieres, notes, posts, messages, candidatures, contacts:[], rangs:{}};
+    seedPlanning(d);
+    return d;
+  }
+  // Emploi du temps type (sans conflit d'enseignant ni de salle) + événements à venir
+  const SEANCES = [
+    ["L3-GAMP","m1",1,"08:00","10:00","Salle 1"],["L3-GAMP","m2",1,"10:15","12:15","Salle 1"],["L3-GAMP","m3",2,"08:00","11:00","Salle 1"],
+    ["L3-GAMP","m1",3,"14:00","16:00","Salle 3"],["L3-GAMP","m2",4,"08:00","10:00","Salle 1"],["L3-GAMP","m3",5,"10:15","12:15","Salle 1"],
+    ["L3-TL","m4",1,"08:00","10:00","Salle 2"],["L3-TL","m5",1,"10:15","12:15","Salle 2"],["L3-TL","m6",2,"14:00","17:00","Salle 2"],
+    ["L3-TL","m4",3,"10:15","12:15","Salle 2"],["L3-TL","m5",4,"08:00","11:00","Salle 2"],["L3-TL","m6",5,"08:00","10:00","Salle 2"],
+    ["L2-MGP","m7",1,"10:15","12:15","Labo"],["L2-MGP","m8",2,"08:00","12:00","Terrain"],["L2-MGP","m7",3,"08:00","10:00","Labo"],
+    ["L2-MGP","m8",4,"14:00","17:00","Terrain"],["L2-MGP","m7",5,"10:15","12:15","Labo"],
+    ["M1-QHSE","m10",1,"14:00","17:00","Salle 4"],["M1-QHSE","m9",2,"08:00","10:00","Salle 4"],["M1-QHSE","m10",3,"08:00","11:00","Salle 4"],
+    ["M1-QHSE","m9",4,"10:15","12:15","Salle 4"],["M1-QHSE","m9",5,"14:00","16:00","Salle 4"],
+  ];
+  const ymdLocal = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  const weekday = n => { const d = new Date(); d.setDate(d.getDate() + n); const w = d.getDay(); if (w === 6) d.setDate(d.getDate() + 2); if (w === 0) d.setDate(d.getDate() + 1); return ymdLocal(d); };
+  function seedPlanning(d) {
+    d.seances = SEANCES.filter(([c, m]) => d.classes.some(x => x.id === c) && d.matieres.some(x => x.id === m))
+      .map(([classe, matiere, jour, debut, fin, salle], i) => ({id:"se" + (i + 1), classe, matiere, jour, debut, fin, salle}));
+    d.evenements = [
+      {id:"ev1", auteur:"adm", classe:"*", type:"reunion", titre:"Conseil pédagogique", details:"Bilan de mi-semestre avec l'ensemble des enseignants.", date:weekday(3), debut:"15:00", fin:"17:00", lieu:"Salle des professeurs"},
+      {id:"ev2", auteur:"t1", classe:"L2-MGP", matiere:"m8", type:"evenement", titre:"Sortie de terrain – géologie", details:"Prévoir bottes, casquette et carnet de terrain.", date:weekday(4), lieu:"Site de terrain"},
+      {id:"ev3", auteur:"t2", classe:"L3-GAMP", matiere:"m2", type:"examen", titre:"Examen de Droit maritime", details:"Documents non autorisés.", date:weekday(7), debut:"08:00", fin:"10:00", lieu:"Salle 1"},
+      {id:"ev4", auteur:"t3", classe:"L3-TL", matiere:"m5", type:"examen", titre:"Partiel – Supply chain management", date:weekday(10), debut:"08:00", fin:"11:00", lieu:"Salle 2"},
+      {id:"ev5", auteur:"adm", classe:"*", type:"evenement", titre:"Journée citoyenne de salubrité", details:"Participation de toutes les promotions.", date:weekday(12), lieu:"Libreville"},
+    ].filter(e => e.classe === "*" || d.classes.some(c => c.id === e.classe));
   }
   const uid = p => p + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  // Conflits d'un cours avec l'emploi du temps existant (même classe, même enseignant ou même salle)
+  function conflits(s, seances, matieres) {
+    const mn = t => +t.slice(0, 2) * 60 + +t.slice(3, 5), prof = (matieres.find(m => m.id === s.matiere) || {}).prof;
+    return seances.filter(x => x.id !== s.id && x.jour === +s.jour && mn(x.debut) < mn(s.fin) && mn(s.debut) < mn(x.fin)).map(x => {
+      const xp = (matieres.find(m => m.id === x.matiere) || {}).prof, xm = (matieres.find(m => m.id === x.matiere) || {}).nom || "un cours";
+      if (x.classe === s.classe) return `la classe ${x.classe} a déjà « ${xm} » de ${x.debut} à ${x.fin}`;
+      if (prof && xp === prof) return `l'enseignant donne déjà « ${xm} » (${x.classe}) de ${x.debut} à ${x.fin}`;
+      if (s.salle && x.salle && x.salle.trim().toLowerCase() === s.salle.trim().toLowerCase()) return `la salle ${x.salle} est occupée par ${x.classe} de ${x.debut} à ${x.fin}`;
+      return null;
+    }).filter(Boolean);
+  }
 
   const Demo = {
-    load() { let d; try { d = JSON.parse(localStorage.getItem(KEY)); } catch (e) {} if (!d || d.v !== 1) { d = seed(); db = d; this.save(); } db = d; db.rangs = {}; },
+    load() { let d; try { d = JSON.parse(localStorage.getItem(KEY)); } catch (e) {} if (!d || d.v !== 1) { d = seed(); db = d; this.save(); } db = d; db.rangs = {}; if (!db.seances) { seedPlanning(db); this.save(); } },
     save() { try { localStorage.setItem(KEY, JSON.stringify(db)); } catch (e) {} },
     async init() { this.load(); let id; try { id = sessionStorage.getItem(SKEY); } catch (e) {} me = id ? db.users.find(u => u.id === id) || null : null; return me; },
     async login(login, pwd, role) {
@@ -122,13 +159,17 @@ const Store = (() => {
     async setPassword(id, pwd) { if ((pwd || "").length < 6) throw new Error("Le mot de passe doit contenir au moins 6 caractères"); db.users.find(u => u.id === id).pwd = pwd; this.save(); },
     async deleteUser(id) {
       if (id === me.id) throw new Error("Vous ne pouvez pas supprimer votre propre compte");
-      db.users = db.users.filter(u => u.id !== id); db.messages = db.messages.filter(m => m.from !== id && m.to !== id); db.posts = db.posts.filter(p => p.auteur !== id);
+      db.users = db.users.filter(u => u.id !== id); db.messages = db.messages.filter(m => m.from !== id && m.to !== id); db.posts = db.posts.filter(p => p.auteur !== id); db.evenements = db.evenements.filter(e => e.auteur !== id);
       Object.values(db.notes).forEach(n => delete n[id]); db.matieres.forEach(m => { if (m.prof === id) m.prof = null; }); this.save();
     },
     async addClasse(c) { if (db.classes.some(x => x.id === c.id)) throw new Error("Ce code de classe existe déjà"); db.classes.push(c); this.save(); },
-    async deleteClasse(id) { db.classes = db.classes.filter(c => c.id !== id); db.matieres.filter(m => m.classe === id).forEach(m => delete db.notes[m.id]); db.matieres = db.matieres.filter(m => m.classe !== id); db.users.forEach(u => { if (u.classe === id) u.classe = null; }); this.save(); },
+    async deleteClasse(id) { db.classes = db.classes.filter(c => c.id !== id); db.matieres.filter(m => m.classe === id).forEach(m => delete db.notes[m.id]); db.seances = db.seances.filter(x => x.classe !== id); db.evenements = db.evenements.filter(e => e.classe !== id); db.matieres = db.matieres.filter(m => m.classe !== id); db.users.forEach(u => { if (u.classe === id) u.classe = null; }); this.save(); },
     async saveMatiere(m) { if (m.id) Object.assign(db.matieres.find(x => x.id === m.id), m); else db.matieres.push({...m, id:uid("m")}); this.save(); },
-    async deleteMatiere(id) { db.matieres = db.matieres.filter(m => m.id !== id); delete db.notes[id]; this.save(); },
+    async deleteMatiere(id) { db.matieres = db.matieres.filter(m => m.id !== id); delete db.notes[id]; db.seances = db.seances.filter(x => x.matiere !== id); this.save(); },
+    async saveSeance(x) { if (x.id) Object.assign(db.seances.find(y => y.id === x.id), x); else db.seances.push({...x, id:uid("se")}); this.save(); },
+    async deleteSeance(id) { db.seances = db.seances.filter(x => x.id !== id); this.save(); },
+    async addEvent(e) { const n = {...e, id:uid("ev"), auteur:me.id}; db.evenements.push(n); this.save(); return n; },
+    async deleteEvent(id) { db.evenements = db.evenements.filter(e => e.id !== id); this.save(); },
     subscribe(cb) { addEventListener("storage", e => { if (e.key === KEY) { const id = me && me.id; this.load(); me = db.users.find(u => u.id === id) || me; cb("all"); } }); },
   };
 
@@ -151,6 +192,9 @@ const Store = (() => {
   const mapMsg = m => ({id:m.id, from:m.from_id, to:m.to_id, texte:m.texte, date:m.date, lu:m.lu});
   const mapPost = p => ({...p, matiere:p.matiere || undefined, echeance:p.echeance || undefined});
   const mapCand = c => ({...c, formationLabel:c.formation_label});
+  const t5 = t => t ? String(t).slice(0, 5) : null;
+  const mapSeance = x => ({...x, debut:t5(x.debut), fin:t5(x.fin)});
+  const mapEvent = e => ({...e, debut:t5(e.debut) || undefined, fin:t5(e.fin) || undefined, matiere:e.matiere || undefined});
   const notesMap = rows => { const o = {}; rows.forEach(n => { (o[n.matiere] || (o[n.matiere] = {}))[n.etudiant] = {cc:n.cc == null ? null : +n.cc, exam:n.exam == null ? null : +n.exam, maj:n.maj}; }); return o; };
 
   const Live = {
@@ -166,6 +210,8 @@ const Store = (() => {
       messages: async () => { db.messages = (await q(sb.from("messages").select("*").order("date"))).map(mapMsg); },
       candidatures: async () => { db.candidatures = me.role === "admin" ? (await q(sb.from("candidatures").select("*").order("date", {ascending:false}))).map(mapCand) : []; },
       contacts: async () => { db.contacts = me.role === "admin" ? await q(sb.from("contacts").select("*").order("date", {ascending:false})) : []; },
+      seances: async () => { db.seances = (await q(sb.from("seances").select("*").order("jour").order("debut"))).map(mapSeance); },
+      evenements: async () => { db.evenements = (await q(sb.from("evenements").select("*").order("date"))).map(mapEvent); },
     },
     async loadAll() { await Promise.all(Object.values(this.loaders).map(f => f())); },
     async init() {
@@ -222,10 +268,21 @@ const Store = (() => {
       if (m.id) await q(sb.from("matieres").update(row).eq("id", m.id)); else await q(sb.from("matieres").insert(row));
       await this.loaders.matieres();
     },
-    async deleteMatiere(id) { await q(sb.from("matieres").delete().eq("id", id)); await this.loaders.matieres(); await this.loaders.notes(); },
+    async deleteMatiere(id) { await q(sb.from("matieres").delete().eq("id", id)); await this.loaders.matieres(); await this.loaders.notes(); await this.loaders.seances(); },
+    async saveSeance(x) {
+      const row = {classe:x.classe, matiere:x.matiere, jour:+x.jour, debut:x.debut, fin:x.fin, salle:x.salle || null};
+      if (x.id) await q(sb.from("seances").update(row).eq("id", x.id)); else await q(sb.from("seances").insert(row));
+      await this.loaders.seances();
+    },
+    async deleteSeance(id) { await q(sb.from("seances").delete().eq("id", id)); db.seances = db.seances.filter(x => x.id !== id); },
+    async addEvent(e) {
+      const row = {classe:e.classe, matiere:e.matiere || null, type:e.type, titre:e.titre, details:e.details || null, date:e.date, debut:e.debut || null, fin:e.fin || null, lieu:e.lieu || null, auteur:me.id};
+      const n = mapEvent(await q(sb.from("evenements").insert(row).select().single())); if (!db.evenements.some(x => x.id === n.id)) db.evenements.push(n); return n;
+    },
+    async deleteEvent(id) { await q(sb.from("evenements").delete().eq("id", id)); db.evenements = db.evenements.filter(e => e.id !== id); },
     subscribe(cb) {
       const ch = sb.channel("esm-live");
-      ["notes","posts","messages","candidatures","contacts"].forEach(t => ch.on("postgres_changes", {event:"*", schema:"public", table:t}, async payload => {
+      ["notes","posts","messages","candidatures","contacts","seances","evenements"].forEach(t => ch.on("postgres_changes", {event:"*", schema:"public", table:t}, async payload => {
         try { await this.loaders[t](); } catch (e) { return; }
         cb(t, payload.new && t === "messages" ? mapMsg(payload.new) : payload.new);
       }));
@@ -291,5 +348,19 @@ const Store = (() => {
     saveMatiere: m => A.saveMatiere(m),
     deleteMatiere: id => A.deleteMatiere(id),
     subscribe: cb => A.subscribe(cb),
+    // Planning
+    saveSeance: x => A.saveSeance(x),
+    deleteSeance: id => A.deleteSeance(id),
+    addEvent: e => A.addEvent(e),
+    deleteEvent: id => A.deleteEvent(id),
+    conflits: x => conflits(x, db.seances, db.matieres),
+    seancesClasse: c => db.seances.filter(x => x.classe === c),
+    seancesProf: id => db.seances.filter(x => (db.matieres.find(m => m.id === x.matiere) || {}).prof === id),
+    eventsPour(u) {
+      if (u.role === "admin") return db.evenements;
+      if (u.role === "etudiant") return db.evenements.filter(e => e.classe === "*" || e.classe === u.classe);
+      const cls = new Set(db.matieres.filter(m => m.prof === u.id).map(m => m.classe));
+      return db.evenements.filter(e => e.classe === "*" || cls.has(e.classe) || e.auteur === u.id);
+    },
   };
 })();
