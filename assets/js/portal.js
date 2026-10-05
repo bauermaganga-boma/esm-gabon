@@ -116,7 +116,7 @@ const P = (() => {
 
   function seanceInfo(s) {
     const m = Store.matiere(s.matiere) || {}, p = Store.user(m.prof);
-    modal(m.nom || "Cours", `<div class="post" style="border-left-color:${PL.colorOf(s.matiere)}"><p><b>${PL.JOURS[s.jour - 1]}</b> de <b>${PL.hm(s.debut)}</b> à <b>${PL.hm(s.fin)}</b></p>
+    modal((s.type && s.type !== "Cours" ? s.type + " · " : "") + (m.nom || "Cours"), `<div class="post" style="border-left-color:${PL.colorOf(s.matiere)}"><p><b>${PL.JOURS[s.jour - 1]}</b> de <b>${PL.hm(s.debut)}</b> à <b>${PL.hm(s.fin)}</b></p>
       <small>Classe : ${esc(Store.classe(s.classe)?.nom || s.classe)}<br>Enseignant : ${esc(full(p))}${s.salle ? "<br>Salle : " + esc(s.salle) : ""}</small></div>`);
   }
   function eventInfo(e) {
@@ -135,7 +135,8 @@ const P = (() => {
       <div class="row"><div class="field"><label>Classe</label><select name="classe">${classes.map(c => `<option value="${c.id}" ${c.id === s.classe ? "selected" : ""}>${esc(c.id)}</option>`).join("")}</select></div>
         <div class="field"><label>Matière</label><select name="matiere" required></select></div></div>
       <div class="row"><div class="field"><label>Jour</label><select name="jour">${PL.JOURS.map((j, i) => `<option value="${i + 1}" ${i + 1 === +s.jour ? "selected" : ""}>${j}</option>`).join("")}</select></div>
-        <div class="field"><label>Salle</label><input name="salle" maxlength="60" value="${esc(s.salle || "")}" placeholder="ex. Salle 2, Labo"></div></div>
+        <div class="field"><label>Type</label><select name="type">${["Cours","TD","TP"].map(t => `<option ${t === (s.type || "Cours") ? "selected" : ""}>${t}</option>`).join("")}</select></div></div>
+      <div class="field"><label>Salle</label><input name="salle" maxlength="60" value="${esc(s.salle || "")}" placeholder="ex. Salle 2, Labo"></div>
       <div class="row"><div class="field"><label>Début</label><input type="time" name="debut" min="07:00" max="19:00" step="900" required value="${s.debut || "08:00"}"></div>
         <div class="field"><label>Fin</label><input type="time" name="fin" min="07:00" max="19:00" step="900" required value="${s.fin || plus2h(s.debut || "08:00")}"></div></div>
       <p id="sfmsg" style="font-size:.85rem;color:var(--muted)"></p>

@@ -670,3 +670,8 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.88rem;min-width:640px}
   .pl-item b{display:block;font-size:.9rem;color:var(--navy)}
   .pl-item span small{font-size:.76rem;color:var(--muted)}
 }
+
+.pl-ty{font-style:normal;font-size:.62rem;font-weight:800;letter-spacing:.04em;background:var(--pc);color:#fff;border-radius:4px;padding:.05rem .3rem;margin-right:.3rem;vertical-align:1px}
+.pl-item .pl-ty{background:var(--pc)}
+/* Le bouton « Pré-inscription » du menu garde un texte blanc (.nav a le passait en bleu marine) */
+.nav a.btn-orange,.nav a.btn-orange:hover{color:#fff}

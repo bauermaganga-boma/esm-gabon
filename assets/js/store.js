@@ -103,7 +103,7 @@ const Store = (() => {
   const weekday = n => { const d = new Date(); d.setDate(d.getDate() + n); const w = d.getDay(); if (w === 6) d.setDate(d.getDate() + 2); if (w === 0) d.setDate(d.getDate() + 1); return ymdLocal(d); };
   function seedPlanning(d) {
     d.seances = SEANCES.filter(([c, m]) => d.classes.some(x => x.id === c) && d.matieres.some(x => x.id === m))
-      .map(([classe, matiere, jour, debut, fin, salle], i) => ({id:"se" + (i + 1), classe, matiere, jour, debut, fin, salle}));
+      .map(([classe, matiere, jour, debut, fin, salle], i) => ({id:"se" + (i + 1), classe, matiere, jour, debut, fin, salle, type:/labo|terrain/i.test(salle) ? "TP" : "Cours"}));
     d.evenements = [
       {id:"ev1", auteur:"adm", classe:"*", type:"reunion", titre:"Conseil pédagogique", details:"Bilan de mi-semestre avec l'ensemble des enseignants.", date:weekday(3), debut:"15:00", fin:"17:00", lieu:"Salle des professeurs"},
       {id:"ev2", auteur:"t1", classe:"L2-MGP", matiere:"m8", type:"evenement", titre:"Sortie de terrain – géologie", details:"Prévoir bottes, casquette et carnet de terrain.", date:weekday(4), lieu:"Site de terrain"},
@@ -270,7 +270,7 @@ const Store = (() => {
     },
     async deleteMatiere(id) { await q(sb.from("matieres").delete().eq("id", id)); await this.loaders.matieres(); await this.loaders.notes(); await this.loaders.seances(); },
     async saveSeance(x) {
-      const row = {classe:x.classe, matiere:x.matiere, jour:+x.jour, debut:x.debut, fin:x.fin, salle:x.salle || null};
+      const row = {classe:x.classe, matiere:x.matiere, jour:+x.jour, debut:x.debut, fin:x.fin, salle:x.salle || null, type:x.type || "Cours"};
       if (x.id) await q(sb.from("seances").update(row).eq("id", x.id)); else await q(sb.from("seances").insert(row));
       await this.loaders.seances();
     },
@@ -358,7 +358,7 @@ const Store = (() => {
     seancesProf: id => db.seances.filter(x => (db.matieres.find(m => m.id === x.matiere) || {}).prof === id),
     eventsPour(u) {
       if (u.role === "admin") return db.evenements;
-      if (u.role === "etudiant") return db.evenements.filter(e => e.classe === "*" || e.classe === u.classe);
+      if (u.role === "etudiant") return db.evenements.filter(e => e.type !== "reunion" && (e.classe === "*" || e.classe === u.classe));
       const cls = new Set(db.matieres.filter(m => m.prof === u.id).map(m => m.classe));
       return db.evenements.filter(e => e.classe === "*" || cls.has(e.classe) || e.auteur === u.id);
     },

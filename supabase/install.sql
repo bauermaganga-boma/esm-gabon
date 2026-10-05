@@ -93,6 +93,7 @@ create table if not exists public.seances (
   debut   time not null,
   fin     time not null,
   salle   text check (length(salle) <= 60),
+  type    text not null default 'Cours' check (type in ('Cours','TD','TP')),
   check (fin > debut)
 );
 
@@ -191,7 +192,9 @@ create policy seances_read  on public.seances for select to authenticated using 
 create policy seances_admin on public.seances for all    to authenticated using (my_role() = 'admin') with check (my_role() = 'admin');
 -- Événements : visibles par les classes concernées ; créés par la scolarité ou par l'enseignant pour ses classes
 create policy evenements_read on public.evenements for select to authenticated
-  using (my_role() = 'admin' or auteur = auth.uid() or classe = '*' or classe = my_classe() or teaches_classe(classe));
+  using (my_role() = 'admin' or auteur = auth.uid() or teaches_classe(classe)
+         or (my_role() = 'enseignant' and classe = '*')
+         or (my_role() = 'etudiant' and type <> 'reunion' and (classe = '*' or classe = my_classe())));  -- réunions : personnel uniquement
 create policy evenements_insert on public.evenements for insert to authenticated
   with check (auteur = auth.uid() and (my_role() = 'admin' or (my_role() = 'enseignant' and teaches_classe(classe))));
 create policy evenements_delete on public.evenements for delete to authenticated
@@ -352,6 +355,7 @@ begin
     ('L2-MGP','m8',4,'14:00','17:00','Terrain'),('L2-MGP','m7',5,'10:15','12:15','Labo'),
     ('M1-QHSE','m10',1,'14:00','17:00','Salle 4'),('M1-QHSE','m9',2,'08:00','10:00','Salle 4'),('M1-QHSE','m10',3,'08:00','11:00','Salle 4'),
     ('M1-QHSE','m9',4,'10:15','12:15','Salle 4'),('M1-QHSE','m9',5,'14:00','16:00','Salle 4');
+  update seances set type = 'TP' where salle in ('Labo','Terrain');
   -- Événements à venir (dates décalées au prochain jour ouvré)
   insert into evenements(auteur, classe, matiere, type, titre, details, date, debut, fin, lieu)
   select e_aut, e_cls, e_mat, e_typ, e_tit, e_det, e_dat + case extract(isodow from e_dat) when 6 then 2 when 7 then 1 else 0 end, e_deb, e_fin, e_lieu from (values

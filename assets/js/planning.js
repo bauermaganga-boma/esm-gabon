@@ -28,7 +28,8 @@ const Planning = (() => {
     const evOf = d => o.events.filter(e => e.date === ymd(d));
     const H = (H1 - H0) * 60 * PX;
     const block = (top, h, color, inner, attrs, cls = "") => `<button class="pl-b ${cls}" style="top:${top}px;height:${Math.max(h, 26)}px;--pc:${color}" ${attrs}>${inner}</button>`;
-    const sBlock = s => { const L = o.label(s); return block((min(s.debut) - H0 * 60) * PX, (min(s.fin) - min(s.debut)) * PX, colorOf(s.matiere), `<b>${esc(L.t)}</b><small>${hm(s.debut)} – ${hm(s.fin)}${L.sub ? " · " + esc(L.sub) : ""}</small>`, `data-s="${s.id}"`); };
+    const ty = s => s.type && s.type !== "Cours" ? `<em class="pl-ty">${esc(s.type)}</em>` : "";
+    const sBlock = s => { const L = o.label(s); return block((min(s.debut) - H0 * 60) * PX, (min(s.fin) - min(s.debut)) * PX, colorOf(s.matiere), `<b>${ty(s)}${esc(L.t)}</b><small>${hm(s.debut)} – ${hm(s.fin)}${L.sub ? " · " + esc(L.sub) : ""}</small>`, `data-s="${s.id}"`); };
     const eBlock = e => block((min(e.debut) - H0 * 60) * PX, ((min(e.fin) || min(e.debut) + 60) - min(e.debut)) * PX, TYPES[e.type].c, `<b>${esc(e.titre)}</b><small>${TYPES[e.type].l} · ${hm(e.debut)}${e.fin ? " – " + hm(e.fin) : ""}</small>`, `data-e="${e.id}"`, "ev");
     const chip = e => `<button class="pl-chip" style="--pc:${TYPES[e.type].c}" data-e="${e.id}">${esc(e.titre)}</button>`;
     let html = `<div class="pl-grid" style="--nd:${nd}"><div class="pl-head"><div></div>${days.slice(0, nd).map((d, i) => `<div class="${ymd(d) === today ? "today" : ""}"><b>${JOURS[i]}</b><small>${fmtDay(d)}</small>${evOf(d).filter(e => !e.debut).map(chip).join("")}</div>`).join("")}</div>
@@ -42,7 +43,7 @@ const Planning = (() => {
     const items = [...o.seances.filter(s => s.jour === di + 1).map(s => ({k:"s", t:min(s.debut), x:s})), ...evOf(d).map(e => ({k:"e", t:min(e.debut) ?? -1, x:e}))].sort((a, b) => a.t - b.t);
     html += `<div class="pl-mobile"><div class="pl-days">${days.slice(0, nd).map((x, i) => `<button data-d="${i}" class="${i === di ? "on" : ""} ${ymd(x) === today ? "today" : ""}"><b>${JOURS[i].slice(0, 3)}</b><small>${x.getDate()}</small></button>`).join("")}</div>
       <div class="pl-list">${items.length ? items.map(({k, x}) => k === "s"
-        ? (L => `<button class="pl-item" style="--pc:${colorOf(x.matiere)}" data-s="${x.id}"><span class="pl-t">${hm(x.debut)}<br><small>${hm(x.fin)}</small></span><span><b>${esc(L.t)}</b><small>${esc(L.sub || "")}</small></span></button>`)(o.label(x))
+        ? (L => `<button class="pl-item" style="--pc:${colorOf(x.matiere)}" data-s="${x.id}"><span class="pl-t">${hm(x.debut)}<br><small>${hm(x.fin)}</small></span><span><b>${ty(x)}${esc(L.t)}</b><small>${esc(L.sub || "")}</small></span></button>`)(o.label(x))
         : `<button class="pl-item ev" style="--pc:${TYPES[x.type].c}" data-e="${x.id}"><span class="pl-t">${x.debut ? hm(x.debut) : "Journée"}${x.fin ? `<br><small>${hm(x.fin)}</small>` : ""}</span><span><b>${esc(x.titre)}</b><small>${TYPES[x.type].l}${x.lieu ? " · " + esc(x.lieu) : ""}</small></span></button>`).join("")
         : `<p class="empty" style="padding:1.5rem">Aucun cours ce jour-là.</p>`}
       ${o.onSlot ? `<button class="btn btn-line btn-sm" data-add="${di + 1}" style="width:100%;justify-content:center;margin-top:.6rem">+ Ajouter un cours le ${JOURS[di].toLowerCase()}</button>` : ""}</div></div>`;
